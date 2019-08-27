@@ -1,90 +1,63 @@
-# Welcome to GitHub
+ProfileSigner
+=======
 
-Welcome to GitHub—where millions of developers work together on software. Ready to get started? Let’s learn how this all works by building and publishing your first GitHub Pages website!
+ProfileSigner is a Python script that will encrypt and/or sign a .mobileconfig profile.
 
-## Repositories
+Currently, this only works with certificates stored in the Keychain.
 
-Right now, we’re in your first GitHub **repository**. A repository is like a folder or storage space for your project. Your project's repository contains all its files such as code, documentation, images, and more. It also tracks every change that you—or your collaborators—make to each file, so you can always go back to previous versions of your project if you make any mistakes.
-
-This repository contains three important files: The HTML code for your first website on GitHub, the CSS stylesheet that decorates your website with colors and fonts, and the **README** file. It also contains an image folder, with one image file.
-
-## Describe your project
-
-You are currently viewing your project's **README** file. **_README_** files are like cover pages or elevator pitches for your project. They are written in plain text or [Markdown language](https://guides.github.com/features/mastering-markdown/), and usually include a paragraph describing the project, directions on how to use it, who authored it, and more.
-
-[Learn more about READMEs](https://help.github.com/en/articles/about-readmes)
-
-## Your first website
-
-**GitHub Pages** is a free and easy way to create a website using the code that lives in your GitHub repositories. You can use GitHub Pages to build a portfolio of your work, create a personal website, or share a fun project that you coded with the world. GitHub Pages is automatically enabled in this repository, but when you create new repositories in the future, the steps to launch a GitHub Pages website will be slightly different.
-
-[Learn more about GitHub Pages](https://pages.github.com/)
-
-## Rename this repository to publish your site
-
-We've already set-up a GitHub Pages website for you, based on your personal username. This repository is called `hello-world`, but you'll rename it to: `username.github.io`, to match your website's URL address. If the first part of the repository doesn’t exactly match your username, it won’t work, so make sure to get it right.
-
-Let's get started! To update this repository’s name, click the `Settings` tab on this page. This will take you to your repository’s settings page. 
-
-![repo-settings-image](https://user-images.githubusercontent.com/18093541/63130482-99e6ad80-bf88-11e9-99a1-d3cf1660b47e.png)
-
-Under the **Repository Name** heading, type: `username.github.io`, where username is your username on GitHub. Then click **Rename**—and that’s it. When you’re done, click your repository name or browser’s back button to return to this page.
-
-<img width="1039" alt="rename_screenshot" src="https://user-images.githubusercontent.com/18093541/63129466-956cc580-bf85-11e9-92d8-b028dd483fa5.png">
-
-Once you click **Rename**, your website will automatically be published at: https://your-username.github.io/. The HTML file—called `index.html`—is rendered as the home page and you'll be making changes to this file in the next step.
-
-Congratulations! You just launched your first GitHub Pages website. It's now live to share with the entire world
-
-## Making your first edit
-
-When you make any change to any file in your project, you’re making a **commit**. If you fix a typo, update a filename, or edit your code, you can add it to GitHub as a commit. Your commits represent your project’s entire history—and they’re all saved in your project’s repository.
-
-With each commit, you have the opportunity to write a **commit message**, a short, meaningful comment describing the change you’re making to a file. So you always know exactly what changed, no matter when you return to a commit.
-
-## Practice: Customize your first GitHub website by writing HTML code
-
-Want to edit the site you just published? Let’s practice commits by introducing yourself in your `index.html` file. Don’t worry about getting it right the first time—you can always build on your introduction later.
-
-Let’s start with this template:
+## Usage
 
 ```
-<p>Hello World! I’m [username]. This is my website!</p>
+./profile_signer.py -h
+usage: profile_signer.py [-h] [-k KEYCHAIN] -n NAME
+                         {sign,encrypt,both} infile outfile
+
+Sign or encrypt mobileconfig profiles, using either a cert + key file, or a
+keychain certificate.
+
+positional arguments:
+  {sign,encrypt,both}   Choose to sign, encrypt, or do both on a profile.
+  infile                Path to input .mobileconfig file
+  outfile               Path to output .mobileconfig file. Defaults to
+                        outputting into the same directory.
+
+optional arguments:
+  -h, --help            show this help message and exit
+
+Keychain arguments:
+  Use these if you wish to sign with a Keychain certificate.
+
+  -k KEYCHAIN, --keychain KEYCHAIN
+                        Name of keychain to search for cert. Defaults to
+                        login.keychain
+  -n NAME, --name NAME  Common name of certificate to use from keychain.
 ```
 
-To add your introduction, copy our template and click the edit pencil icon at the top right hand corner of the `index.html` file.
+Note that the infile and outfile **must** be named differently.  You cannot overwrite the infile with the outfile.
 
-<img width="997" alt="edit-this-file" src="https://user-images.githubusercontent.com/18093541/63131820-0794d880-bf8d-11e9-8b3d-c096355e9389.png">
+### Sign a profile
 
+If I wanted to sign a profile such as my [AcrobatPro.mobileconfig](https://github.com/nmcspadden/Profiles/blob/master/AcrobatPro.mobileconfig) with my "3rd Party Mac Developer Application" certificate from the Apple developer site, I'd use this command:  
+`./profile_signer.py -n "3rd Party Mac Developer Application" sign AcrobatPro.mobileconfig AcrobatProSigned.mobileconfig`
 
-Delete this placeholder line:
+Signing a profile will change the red "Unverified" text underneath the profile name in the Profiles pane of the System Preferences to a green "Verified" text.  Signed profiles cannot be tampered with without breaking the signing validation.
 
-```
-<p>Welcome to your first GitHub Pages website!</p>
-```
+Note that whatever certificate you sign your profiles with must be trusted on your clients, otherwise they will refuse to install it without warning messages.
 
-Then, paste the template to line 15 and fill in the blanks.
+### Encrypt a profile
 
-<img width="1032" alt="edit-githuboctocat-index" src="https://user-images.githubusercontent.com/18093541/63132339-c3a2d300-bf8e-11e9-8222-59c2702f6c42.png">
+If I wanted to encrypt that profile above, with the same certificate, I'd use this command:  
+`./profile_signer.py -n "3rd Party Mac Developer Application" encrypt AcrobatPro.mobileconfig AcrobatProEnc.mobileconfig`
 
+Encrypted profiles (that are unsigned) will have encrypted payloads.  While the overall profile structure is visible as XML (and can be modified), the payload itself will be encrypted with the **public key of the certificate** you choose.
 
-When you’re done, scroll down to the `Commit changes` section near the bottom of the edit page. Add a short message explaining your change, like "Add my introduction", then click `Commit changes`.
+Note that the client machine you want to install the profile on must have the **private key of the certificate you signed with** in order to decrypt the profile.  If the client can't decrypt the profile, it can't install it.
 
+If you want to encrypt a profile and ensure only a specific client will be able to receive / use it, you'll want to encrypt it using a machine-specific certificate for that client - and that setup is way outside of the scope of this project.  You could use something like Puppet certs for this.
 
-<img width="1030" alt="add-my-username" src="https://user-images.githubusercontent.com/18093541/63131801-efbd5480-bf8c-11e9-9806-89273f027d16.png">
+### Encrypt & Sign profiles
 
-Once you click `Commit changes`, your changes will automatically be published on your GitHub Pages website. Refresh the page to see your new changes live in action.
+To both encrypt & sign, use this command:  
+`./profile_signer.py -n "3rd Party Mac Developer Application" both AcrobatPro.mobileconfig AcrobatProBoth.mobileconfig`
 
-:tada: You just made your first commit! :tada:
-
-## Extra Credit: Keep on building!
-
-Change the placeholder Octocat gif on your GitHub Pages website by [creating your own personal Octocat emoji](https://myoctocat.com/build-your-octocat/) or [choose a different Octocat gif from our logo library here](https://octodex.github.com/). Add that image to line 12 of your `index.html` file, in place of the `<img src=` link.
-
-Want to add even more code and fun styles to your GitHub Pages website? [Follow these instructions](https://github.com/github/personal-website) to build a fully-fledged static website.
-
-![octocat](./images/create-octocat.png)
-
-## Everything you need to know about GitHub
-
-Getting started is the hardest part. If there’s anything you’d like to know as you get started with GitHub, try searching [GitHub Help](https://help.github.com). Our documentation has tutorials on everything from changing your repository settings to configuring GitHub from your command line.
+The same rules apply as above - encrypting with the public key means it must be decrypted on the client with the private key.  Signing the profile means the client will complain if the certificate isn't trusted.
